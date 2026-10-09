@@ -1,135 +1,262 @@
 # Document Scanner & Enhancer (`docscan`)
 
-A command-line **document scanner built with classical computer vision**. Give it a photo of
-a page taken at an angle; it finds the page, flattens the perspective and cleans up the
-lighting - the same idea as a phone "scan" app, but every step is implemented in plain,
-readable Python so you can study how it works.
+**A Computer Vision project by Raunak Rustagi**
 
-> Reference sample project for the *Computer Vision* course (VITyarthi "Build Your Own
-> Project"). It demonstrates the expected repository structure, documentation, testing and
-> report. Students must create their **own** original project.
+A command-line document scanner built using classical computer vision techniques. Given a photograph of a paper page taken at an angle, the system detects the page boundaries, corrects perspective distortion, and enhances the image to improve readability.
+
+The project demonstrates practical applications of image processing, edge detection, contour analysis, projective geometry, homography estimation, and histogram-based enhancement using Python, NumPy, and OpenCV.
 
 ## Overview
-```
-photo -> validate -> edges (Canny) -> page quad (contours | Hough fallback)
-      -> homography (DLT) -> perspective warp -> enhance -> save + metrics
+
+```text
+Input photograph
+       |
+       v
+Image validation and preprocessing
+       |
+       v
+Canny edge detection
+       |
+       v
+Page boundary detection
+(Contours + Hough fallback)
+       |
+       v
+Homography estimation using DLT
+       |
+       v
+Perspective correction
+       |
+       v
+Image enhancement
+       |
+       v
+Save scanned image and quality metrics
 ```
 
-![Pipeline stages](docs/figures/pipeline_stages.png)
+**Pipeline visualization:** [View pipeline stages](https://github.com/Raaunnakk555/doc-scanner-cv/blob/main/docs/figures/pipeline_stages.png)
 
 ## Features
-- **Module 1 - Detection:** Gaussian filtering, Otsu-driven Canny edges, contour-based quad
-  finding, Hough-transform fallback gated by edge support.
-- **Module 2 - Rectification:** normalised **DLT homography written from scratch** (SVD),
-  perspective warp, optional A4/Letter aspect prior.
-- **Module 3 - Enhancement:** flat-field illumination correction, **histogram equalisation
-  from scratch**, CLAHE, unsharp masking, adaptive thresholding (`color` / `gray` / `bw`).
-- Single image, batch folder, synthetic demo and accuracy-evaluation commands.
-- Quality metrics (sharpness, contrast, entropy) and ground-truth corner error.
-- Validated config, clear error messages, non-zero exit codes, console + file logging.
 
-## Technologies
-Python 3.9+, NumPy, OpenCV (`opencv-python-headless`), `unittest` (standard library).
-Optional for regenerating diagrams/figures: Matplotlib.
+### 1. Document Detection
+- Gaussian filtering to reduce image noise.
+- Otsu-based threshold selection for Canny edge detection.
+- Contour-based detection of the document's four corners.
+- Hough-transform fallback when contour detection cannot find a suitable page boundary.
+
+### 2. Perspective Rectification
+- Corner ordering and quadrilateral validation.
+- Homography estimation using the Direct Linear Transform (DLT).
+- Singular Value Decomposition (SVD) for solving the homography system.
+- Perspective warping to produce a front-facing document image.
+- Optional A4 and Letter paper aspect-ratio settings.
+
+### 3. Image Enhancement
+- Illumination correction to reduce uneven lighting and shadows.
+- Histogram equalisation implemented using NumPy.
+- Contrast Limited Adaptive Histogram Equalisation (CLAHE).
+- Image sharpening.
+- Adaptive thresholding for black-and-white output.
+
+Available enhancement modes:
+- `color`
+- `gray`
+- `bw`
+
+### 4. Additional Capabilities
+- Scan a single image.
+- Process a folder of images in batch mode.
+- Generate and scan synthetic document images.
+- Evaluate detection accuracy using known ground-truth corners.
+- Calculate image sharpness, contrast, entropy, and corner localisation error.
+- Save logs, debug images, and evaluation results.
+- Validate input files and handle processing errors.
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| Python | Application logic and command-line interface |
+| NumPy | Numerical computations and DLT implementation |
+| OpenCV | Image processing, edge detection, contours, and perspective warping |
+| unittest | Automated unit and integration testing |
+| Matplotlib | Optional generation of project diagrams and figures |
 
 ## Project Structure
-```
+
+```text
 doc-scanner-cv/
-|-- main.py                 # CLI entry point (scan | batch | demo | evaluate)
-|-- docscan/
-|   |-- config.py           # validated ScanConfig dataclass
-|   |-- logger.py           # console + file logging
-|   |-- io_utils.py         # load/save + input validation
-|   |-- preprocess.py       # grayscale, blur, histogram equalisation (scratch)
-|   |-- edges.py            # Canny + Hough line detection
-|   |-- detect.py           # page-quad detection (contour + Hough fallback)
-|   |-- geometry.py         # DLT homography (scratch), rectification
-|   |-- enhance.py          # illumination fix, CLAHE, sharpen, threshold
-|   |-- metrics.py          # sharpness / contrast / entropy / corner error
-|   |-- pipeline.py         # ScanPipeline orchestrator
-|   |-- synthetic.py        # synthetic scenes with ground-truth corners
-|   `-- evaluate.py         # batch evaluation + ablation
-|-- tests/                  # 40 unit + integration tests
-|-- scripts/                # make_diagrams.py, make_figures.py
-|-- docs/                   # diagrams, figures, evaluation results
-|-- samples/                # example input/output images
-|-- statement.md            # problem statement
-`-- requirements.txt
+├── main.py
+├── docscan/
+│   ├── config.py
+│   ├── logger.py
+│   ├── io_utils.py
+│   ├── preprocess.py
+│   ├── edges.py
+│   ├── detect.py
+│   ├── geometry.py
+│   ├── enhance.py
+│   ├── metrics.py
+│   ├── pipeline.py
+│   ├── synthetic.py
+│   └── evaluate.py
+├── tests/
+├── scripts/
+├── docs/
+├── samples/
+├── statement.md
+├── requirements.txt
+└── README.md
 ```
+
+**Main components**
+
+- `main.py` — command-line entry point for scanning, batch processing, demos, and evaluation.
+- `detect.py` — document boundary detection.
+- `geometry.py` — homography estimation and perspective rectification.
+- `enhance.py` — illumination correction and image enhancement.
+- `preprocess.py` — image preprocessing and histogram operations.
+- `pipeline.py` — coordinates the complete scanning workflow.
+- `metrics.py` — computes image quality metrics.
+- `synthetic.py` and `evaluate.py` — generate synthetic scenes and evaluate detection accuracy.
+- `tests/` — automated tests for geometry, preprocessing, detection, and pipeline behaviour.
 
 ## Installation
-Works on Windows, macOS and Linux from a terminal. No GUI is required.
+
+The project can be run on Windows, macOS, or Linux using a terminal.
+
+### 1. Clone the repository
 
 ```bash
-# 1. Clone
-git clone https://github.com/<your-username>/doc-scanner-cv.git
+git clone https://github.com/Raaunnakk555/doc-scanner-cv.git
 cd doc-scanner-cv
+```
 
-# 2. (Recommended) create a virtual environment
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+### 2. Check Python
 
-# 3. Install dependencies
-pip install -r requirements.txt
+Python 3.9 or later is intended by the project documentation. The commands below use the Python launcher on Windows.
+
+```powershell
+py --version
+```
+
+### 3. Install dependencies
+
+```powershell
+py -m pip install -r requirements.txt
 ```
 
 ## Usage
-```bash
-# Try it immediately - generates a synthetic photo, then scans it (saves debug images)
-python main.py demo -o outputs/demo
 
-# Scan one photo (modes: color | gray | bw ; paper: auto | a4 | letter)
-python main.py scan path/to/photo.jpg -o outputs/scan --mode bw --paper a4 --debug
+Run these commands from the project's root directory.
 
-# Scan every image in a folder (bad files are skipped and reported)
-python main.py batch path/to/photos/ -o outputs/batch
+### Run the synthetic demo
 
-# Measure accuracy on 30 synthetic scenes with known ground truth
-python main.py evaluate -n 30 -o outputs/eval
-
-# Help
-python main.py --help
-python main.py scan --help
+```powershell
+py main.py demo -o outputs/demo
 ```
-Results are written to the chosen output folder; logs go to `logs/docscan.log`
-(`-v` enables debug logging). Exit codes: `0` success, `1` error, `2` batch finished with skipped files.
+
+### Scan a single photograph
+
+```powershell
+py main.py scan "path/to/photo.jpg" -o outputs/scan --mode bw --paper a4 --debug
+```
+
+Replace `path/to/photo.jpg` with the actual path to your image.
+
+### Scan a folder of images
+
+```powershell
+py main.py batch "path/to/photos" -o outputs/batch
+```
+
+### Evaluate detection accuracy
+
+```powershell
+py main.py evaluate -n 30 -o outputs/eval
+```
+
+### View command help
+
+```powershell
+py main.py --help
+py main.py scan --help
+```
+
+The generated images and evaluation files are saved in the selected output directories. Logging is configured by the application and can include `logs/docscan.log`.
+
+**Exit codes:** `0` indicates success, `1` indicates an error, and `2` indicates a batch operation that finished with skipped files.
 
 ## Testing
-```bash
-python -m unittest discover -s tests -t . -v
+
+Run the automated test suite:
+
+```powershell
+py -m unittest discover -s tests -t . -v
 ```
-The 40 tests cover: DLT correctness (exact mapping, agreement with OpenCV, noise
-robustness, degenerate input), point ordering, histogram equalisation, illumination
-correction, detection accuracy, the Hough fallback and its rejection gate, all enhancement
-modes, config/IO validation, and end-to-end CLI behaviour (including error exit codes).
+
+The recorded test run completed **40 tests successfully**.
+
+The tests cover:
+
+- Homography estimation and point mapping.
+- Agreement with OpenCV's perspective-transform implementation.
+- Corner ordering and degenerate geometry.
+- Histogram equalisation and illumination correction.
+- Image resizing and preprocessing.
+- Document detection and fallback behaviour.
+- Enhancement modes and contrast improvement.
+- Input validation and command-line behaviour.
 
 ## Results
-Evaluated on 30 synthetic scenes (random perspective, lighting gradient, sensor noise):
 
-| Metric | Value |
-|--------|-------|
-| Detection success (corner error <= 10 px) | 100 % |
-| Mean / max corner error | 0.73 px / 1.13 px |
-| Hough-only fallback success (ablation) | 90 % |
+The project was evaluated on 30 synthetic scenes containing perspective distortion, lighting variation, and simulated image noise.
 
-![Evaluation](docs/figures/evaluation.png)
+| Metric | Recorded result |
+|---|---:|
+| Detection success (corner error ≤ 10 pixels) | 100% |
+| Mean corner error | 0.74 pixels |
+| Maximum corner error | 1.13 pixels |
+| Hough-only fallback success | 93% |
+| Automated tests passed | 40 |
 
-**Honest limitations:** synthetic scenes are cleaner than real photos, so real-world
-accuracy will be lower; a single image cannot reveal a page's true aspect ratio without
-camera intrinsics (hence the `--paper` prior); curved or heavily occluded pages are not handled.
+**Evaluation visualization:** [View evaluation results](https://github.com/Raaunnakk555/doc-scanner-cv/blob/main/docs/figures/evaluation.png)
+
+These results describe the recorded synthetic evaluation. They should not be interpreted as guaranteed accuracy on every real-world photograph. Performance can vary with image quality, lighting, page visibility, and background complexity.
+
+## Limitations
+
+- Curved pages are not currently supported.
+- Multiple documents in one image are outside the current scope.
+- Heavily occluded or poorly visible page boundaries can be difficult to detect.
+- The true paper aspect ratio cannot always be inferred from a single perspective-distorted image.
+- Synthetic evaluation results may not fully represent real-world performance.
+- The current implementation does not perform OCR or text recognition.
+
+## Future Improvements
+
+- Evaluate the system on a larger collection of real document photographs.
+- Improve corner localisation and fallback detection.
+- Add support for curved-page correction.
+- Support multiple documents in one photograph.
+- Integrate OCR as an optional post-processing stage.
+- Extend robustness testing for blur, noise, and challenging lighting.
 
 ## Documentation
-- [`statement.md`](statement.md) - problem statement, scope, users, features
-- [`docs/Project_Report.pdf`](docs/Project_Report.pdf) - full project report (sample)
-- `docs/diagrams/` - architecture, workflow, use-case, sequence, class/component diagrams
-- `docs/figures/`, `docs/evaluation/` - result figures and per-scene CSV
 
-## Regenerating diagrams and figures (optional)
-```bash
-pip install matplotlib
-python scripts/make_diagrams.py
-python scripts/make_figures.py
-```
+- [`statement.md`](https://github.com/Raaunnakk555/doc-scanner-cv/blob/main/statement.md) — project problem statement and scope.
+- [`docs/figures/`](https://github.com/Raaunnakk555/doc-scanner-cv/tree/main/docs/figures) — pipeline and evaluation figures.
+- [`docs/diagrams/`](https://github.com/Raaunnakk555/doc-scanner-cv/tree/main/docs/diagrams) — system design diagrams.
+- [`docs/evaluation/`](https://github.com/Raaunnakk555/doc-scanner-cv/tree/main/docs/evaluation) — evaluation outputs, if present.
+
+## Author
+
+**Raunak Rustagi**  
+Computer Vision Project  
+VIT Bhopal University
+
+GitHub: [Raaunnakk555](https://github.com/Raaunnakk555)
 
 ## License
-Educational use.
+
+Developed for educational and academic purposes.
